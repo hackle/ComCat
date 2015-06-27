@@ -1,0 +1,15 @@
+syntax: glob
+*.DotSettings.user
+*.pdb
+*.suo
+*.dll
+*.dbmdl
+*.orig
+.nuget/
+packages/
+bin/
+obj/
+Publisher/Teamseer
+IntranetDEV/
+ResourceManagementConsolePublisher/console/
+ScheduleEmailPublisher/Console/
