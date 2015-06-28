@@ -9,10 +9,10 @@ namespace DataMemberOrderor
 
     public partial class DialogReorder : Form
     {
-        private readonly IAttribute[] attributes;
-        private List<AttributeInOrder> listOfOrder;
+        private readonly IPropertyDeclaration[] attributes;
+        private List<PropertyInOrder> listOfOrder;
 
-        IAttribute[] AttributesInOrder
+        public IPropertyDeclaration[] PropertiesInOrder
         {
             get
             {
@@ -20,16 +20,16 @@ namespace DataMemberOrderor
             }
         }
 
-        public DialogReorder(IAttribute[] attributes)
+        public DialogReorder(IPropertyDeclaration[] attributes)
         {
             this.attributes = attributes;
 
             InitializeComponent();
 
-            listOfOrder = new List<AttributeInOrder>();
+            listOfOrder = new List<PropertyInOrder>();
             for (var i = 0; i < attributes.Length; i++)
             {
-                listOfOrder.Add(new AttributeInOrder(attributes[i]) { Order = i });
+                listOfOrder.Add(new PropertyInOrder(attributes[i]) { Order = i });
             }
 
             this.dataGridViewOrders.DataSource = listOfOrder;
@@ -37,7 +37,7 @@ namespace DataMemberOrderor
 
         private void MoveUp()
         {
-            var selectedAttribute = this.GetSelectedAttributeInOrder();
+            var selectedAttribute = this.GetSelectedPropertyInOrder();
 
             var index = selectedAttribute.Order;
             if (index == 0) return;
@@ -47,7 +47,7 @@ namespace DataMemberOrderor
 
         private void MoveDown()
         {
-            var selectedAttribute = this.GetSelectedAttributeInOrder();
+            var selectedAttribute = this.GetSelectedPropertyInOrder();
 
             var index = selectedAttribute.Order;
             if (index == listOfOrder.Max(o => o.Order)) return;
@@ -74,11 +74,11 @@ namespace DataMemberOrderor
             this.listOfOrder.Single(o => o.Order == order).Order += offset;
         }
 
-        private AttributeInOrder GetSelectedAttributeInOrder()
+        private PropertyInOrder GetSelectedPropertyInOrder()
         {
             if (dataGridViewOrders.SelectedRows.Count < 1) return null;
 
-            return dataGridViewOrders.SelectedRows[0].DataBoundItem as AttributeInOrder;
+            return dataGridViewOrders.SelectedRows[0].DataBoundItem as PropertyInOrder;
         }
 
         private void buttonMoveUp_Click(object sender, System.EventArgs e)
@@ -92,11 +92,11 @@ namespace DataMemberOrderor
         }
     }
 
-    public class AttributeInOrder
+    public class PropertyInOrder
     {
-        public IAttribute Attribute { get; set; }
+        public IPropertyDeclaration Attribute { get; set; }
 
-        public AttributeInOrder(IAttribute attribute)
+        public PropertyInOrder(IPropertyDeclaration attribute)
         {
             this.Attribute = attribute;
         }
@@ -107,7 +107,7 @@ namespace DataMemberOrderor
         {
             get
             {
-                return this.Attribute.Name.QualifiedName;
+                return this.Attribute.DeclaredName;
             }
         }
     }

@@ -24,6 +24,8 @@ using JetBrains.Util;
 
 namespace DataMemberOrderor
 {
+    using System.Windows.Forms;
+
     [ContextAction(Name = "OrderDataMember", Group = "C#", Description = "Order DataMember Elements")]
     public class OrderDataMemberContextAction : ContextActionBase
     {
@@ -64,7 +66,10 @@ namespace DataMemberOrderor
 
         private static IPropertyDeclaration[] ReorderNodes(IPropertyDeclaration[] properties)
         {
-            return properties.Reverse().Select(p => p.Copy()).ToArray();
+            var orderer = new DialogReorder(properties);
+            orderer.ShowDialog();
+
+            return orderer.PropertiesInOrder;
         }
 
         private void SetOrder(IPropertyDeclaration propertyDeclaration, int i)
