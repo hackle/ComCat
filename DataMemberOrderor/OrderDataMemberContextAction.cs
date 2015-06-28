@@ -86,8 +86,9 @@ namespace DataMemberOrderor
                     ModificationUtil.DeleteChild(orderPara);
                 }
 
-                var orderNew = factory.CreateExpressionAsIs(String.Format("Order = {0}", i));
-
+                var orderNew = factory.CreateExpression(String.Format("Order = {0}", i));
+                
+                
                 ModificationUtil.AddChildAfter(anchor, orderNew);
             }
         }
