@@ -5,6 +5,7 @@ namespace DataMemberOrderor
 {
     using System.Linq;
 
+    using JetBrains.Application.PersistentMap;
     using JetBrains.ReSharper.Psi.CSharp.Tree;
 
     public partial class DialogReorder : Form
@@ -57,21 +58,27 @@ namespace DataMemberOrderor
 
         private void MoveOrderUp(int index)
         {
-            this.MoveBy(index, -1);
-            this.MoveBy(index - 1, 1);
+            var firstRow = listOfOrder.Single(o => o.Order == index -1);
+            var secondRow = listOfOrder.Single(o => o.Order == index);
+
+            firstRow.Order = index;
+            secondRow.Order = index - 1;
 
             this.ReBind();
+
+            var toSelect = from DataGridViewRow row in this.dataGridViewOrders.Rows where ((PropertyInOrder)row.DataBoundItem).Order == index select row;
+            
+            var dataGridViewRows = toSelect as DataGridViewRow[] ?? toSelect.ToArray();
+            if (dataGridViewRows.Any())
+            {
+                dataGridViewRows.First().Selected = true;
+            }
         }
 
         private void ReBind()
         {
             listOfOrder = listOfOrder.OrderBy(o => o.Order).ToList();
             this.dataGridViewOrders.DataSource = listOfOrder;
-        }
-
-        private void MoveBy(int order, int offset)
-        {
-            this.listOfOrder.Single(o => o.Order == order).Order += offset;
         }
 
         private PropertyInOrder GetSelectedPropertyInOrder()

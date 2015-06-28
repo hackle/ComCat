@@ -2,7 +2,7 @@
 <package >
   <metadata>
     <id>ComCat</id>
-    <version>1.0.0.0</version>
+    <version>1.0.0.2</version>
     <title>ComCat</title>
     <authors>hacklew@hotmail.com</authors>
     <owners>Hackle Wayne</owners>
@@ -17,6 +17,6 @@
     </dependencies>
   </metadata>
   <files>
-    <file src="bin\Debug\*.*" target="ReSharper\vAny\plugins" />
+    <file src="bin\*.dll" target="ReSharper\vAny\plugins" />
   </files>
 </package>
