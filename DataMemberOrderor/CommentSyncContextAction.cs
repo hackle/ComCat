@@ -51,7 +51,7 @@ namespace DataMemberOrderor
         /// </returns>
         public override bool IsAvailable(IUserDataHolder cache)
         {
-            throw new NotImplementedException();
+            return false;
         }
     }
 }
