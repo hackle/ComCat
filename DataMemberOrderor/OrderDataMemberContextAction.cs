@@ -3,9 +3,6 @@ using System.Linq;
 
 using JetBrains.Application.Progress;
 using JetBrains.ProjectModel;
-using JetBrains.ReSharper.Feature.Services.Bulbs;
-using JetBrains.ReSharper.Feature.Services.CSharp.Bulbs;
-using JetBrains.ReSharper.Intentions.Extensibility;
 using JetBrains.ReSharper.Psi.CSharp;
 using JetBrains.ReSharper.Psi.CSharp.Parsing;
 using JetBrains.ReSharper.Psi.CSharp.Tree;
@@ -16,6 +13,9 @@ using JetBrains.Util;
 
 namespace DataMemberOrderor
 {
+    using JetBrains.ReSharper.Feature.Services.ContextActions;
+    using JetBrains.ReSharper.Feature.Services.CSharp.Analyses.Bulbs;
+
     [ContextAction(Name = "OrderDataMember", Group = "C#", Description = "Order DataMember Elements")]
     public class OrderDataMemberContextAction : ContextActionBase
     {
