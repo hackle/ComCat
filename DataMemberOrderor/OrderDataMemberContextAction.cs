@@ -4,7 +4,6 @@ using System.Linq;
 using JetBrains.Application.Progress;
 using JetBrains.ProjectModel;
 using JetBrains.ReSharper.Psi.CSharp;
-using JetBrains.ReSharper.Psi.CSharp.Parsing;
 using JetBrains.ReSharper.Psi.CSharp.Tree;
 using JetBrains.ReSharper.Psi.ExtensionsAPI.Tree;
 using JetBrains.ReSharper.Psi.Tree;
@@ -15,6 +14,7 @@ namespace DataMemberOrderor
 {
     using JetBrains.ReSharper.Feature.Services.ContextActions;
     using JetBrains.ReSharper.Feature.Services.CSharp.Analyses.Bulbs;
+    using JetBrains.ReSharper.Psi;
 
     [ContextAction(Name = "OrderDataMember", Group = "C#", Description = "Order DataMember Elements")]
     public class OrderDataMemberContextAction : ContextActionBase
@@ -70,21 +70,32 @@ namespace DataMemberOrderor
 
             if (null == attribute) return;
 
-            var anchor = attribute.Children().FirstOrDefault(n => n.NodeType == CSharpTokenType.LPARENTH);
-            
-            if (null != anchor)
-            {
-                var orderPara = attribute.PropertyAssignments.SingleOrDefault(a => a.Reference.GetName() == "Order");
-            
-                if (null != orderPara)
-                {
-                    ModificationUtil.DeleteChild(orderPara);
-                }
+            var orderProperty = attribute.PropertyAssignments.FirstOrDefault(p => p.PropertyNameIdentifier.Name == "Order");
 
-                var orderNew = factory.CreateExpression(String.Format("Order={0}", i)); //.CreateObjectCreationExpressionMemberInitializer("Order", factory.CreateExpression(""));
+            if (null != orderProperty) ModificationUtil.DeleteChild(orderProperty);
 
-                ModificationUtil.AddChildAfter(anchor, orderNew);
-            }
+            var replacement = factory.CreatePropertyAssignment(
+                "Order",
+                factory.CreateExpressionByConstantValue(
+                    new ConstantValue(i, attribute.GetPsiModule(), attribute.GetResolveContext())));
+
+            attribute.AddPropertyAssignmentBefore(replacement, null);
+
+            //var anchor = attribute.Children().FirstOrDefault(n => n.NodeType == CSharpTokenType.LPARENTH);
+
+            //if (null != anchor)
+            //{
+            //    var orderPara = attribute.PropertyAssignments.SingleOrDefault(a => a.Reference.GetName() == "Order");
+
+            //    if (null != orderPara)
+            //    {
+            //        ModificationUtil.DeleteChild(orderPara);
+            //    }
+
+            //    var orderNew = factory.CreateExpression(String.Format("Order={0}", i)); //.CreateObjectCreationExpressionMemberInitializer("Order", factory.CreateExpression(""));
+
+            //    ModificationUtil.AddChildAfter(anchor, orderNew);
+            //}
         }
 
         public override string Text
