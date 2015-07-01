@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Linq;
-
 using JetBrains.Application.Progress;
 using JetBrains.ProjectModel;
 using JetBrains.ReSharper.Psi.CSharp;
