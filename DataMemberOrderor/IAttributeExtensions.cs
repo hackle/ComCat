@@ -87,7 +87,7 @@ namespace DataMemberOrderor
                     if (attr.Arguments.Any())
                         return ModificationUtil.AddChildAfter<IPropertyAssignment>((ITreeNode)ModificationUtil.AddChildAfter<LeafElementBase>((ITreeNode)attr.Arguments.Last(), TreeElementFactory.CreateLeafElement(CSharpTokenType.COMMA)), param);
                     if (attr.PropertyAssignments.Any())
-                        return ModificationUtil.AddChildAfter<IPropertyAssignment>((ITreeNode)ModificationUtil.AddChildBefore<LeafElementBase>((ITreeNode)attr.PropertyAssignments.First(), TreeElementFactory.CreateLeafElement(CSharpTokenType.COMMA)), param);
+                        return ModificationUtil.AddChildBefore<IPropertyAssignment>((ITreeNode)ModificationUtil.AddChildBefore<LeafElementBase>((ITreeNode)attr.PropertyAssignments.First(), TreeElementFactory.CreateLeafElement(CSharpTokenType.COMMA)), param);
                     return ModificationUtil.AddChildAfter<IPropertyAssignment>((ITreeNode)attr.LPar, param);
                 }
                 return ModificationUtil.AddChildAfter<IPropertyAssignment>((ITreeNode)ModificationUtil.AddChildAfter<LeafElementBase>((ITreeNode)anchor, TreeElementFactory.CreateLeafElement(CSharpTokenType.COMMA)), param);
