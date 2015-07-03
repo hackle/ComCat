@@ -11,6 +11,8 @@ using JetBrains.Util;
 
 namespace DataMemberOrderor
 {
+    using System.Windows.Forms;
+
     using global::JetBrains.ReSharper.Feature.Services.Bulbs;
     using global::JetBrains.ReSharper.Feature.Services.CSharp.Bulbs;
     using global::JetBrains.ReSharper.Intentions.Extensibility;
@@ -37,6 +39,8 @@ namespace DataMemberOrderor
 
             var reordered = ReorderNodes(properties);
 
+            if (null == reordered) return null;
+
             var anchor = properties[0];
 
             for (var i = properties.Length - 1; i >= 0; i--)
@@ -57,9 +61,7 @@ namespace DataMemberOrderor
         private static IPropertyDeclaration[] ReorderNodes(IPropertyDeclaration[] properties)
         {
             var orderer = new DialogReorder(properties);
-            orderer.ShowDialog();
-
-            return orderer.PropertiesInOrder;
+            return DialogResult.OK == orderer.ShowDialog() ? orderer.PropertiesInOrder : null;
         }
 
         private void SetOrder(IPropertyDeclaration propertyDeclaration, int i)
