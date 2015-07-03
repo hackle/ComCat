@@ -42,7 +42,7 @@ namespace DataMemberOrderor
             var index = selectedAttribute.Order;
             if (index == 0) return;
 
-            this.MoveOrderUp(index);
+            this.MoveBy(index, -1);
         }
 
         private void MoveDown()
@@ -52,20 +52,20 @@ namespace DataMemberOrderor
             var index = selectedAttribute.Order;
             if (index == listOfOrder.Max(o => o.Order)) return;
 
-            this.MoveOrderUp(index + 1);
+            this.MoveBy(index, 1);
         }
 
-        private void MoveOrderUp(int index)
+        private void MoveBy(int index, int offset)
         {
-            var firstRow = listOfOrder.Single(o => o.Order == index -1);
-            var secondRow = listOfOrder.Single(o => o.Order == index);
+            var currentRow = listOfOrder.Single(o => o.Order == index);
+            var replacement = listOfOrder.Single(o => o.Order == index + offset);
 
-            firstRow.Order = index;
-            secondRow.Order = index - 1;
+            currentRow.Order = index + offset;
+            replacement.Order = index;
 
             this.ReBind();
 
-            var toSelect = from DataGridViewRow row in this.dataGridViewOrders.Rows where ((PropertyInOrder)row.DataBoundItem).Order == index select row;
+            var toSelect = from DataGridViewRow row in this.dataGridViewOrders.Rows where ((PropertyInOrder)row.DataBoundItem).Order == currentRow.Order select row;
             
             var dataGridViewRows = toSelect as DataGridViewRow[] ?? toSelect.ToArray();
             if (dataGridViewRows.Any())
