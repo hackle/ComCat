@@ -5,8 +5,7 @@ namespace DataMemberOrderor
 {
     using System.Linq;
 
-    using JetBrains.Application.PersistentMap;
-    using JetBrains.ReSharper.Psi.CSharp.Tree;
+    using global::JetBrains.ReSharper.Psi.CSharp.Tree;
 
     public partial class DialogReorder : Form
     {

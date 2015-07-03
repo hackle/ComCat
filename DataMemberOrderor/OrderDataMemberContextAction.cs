@@ -11,9 +11,10 @@ using JetBrains.Util;
 
 namespace DataMemberOrderor
 {
-    using JetBrains.ReSharper.Feature.Services.ContextActions;
-    using JetBrains.ReSharper.Feature.Services.CSharp.Analyses.Bulbs;
-    using JetBrains.ReSharper.Psi;
+    using global::JetBrains.ReSharper.Feature.Services.Bulbs;
+    using global::JetBrains.ReSharper.Feature.Services.CSharp.Bulbs;
+    using global::JetBrains.ReSharper.Intentions.Extensibility;
+    using global::JetBrains.ReSharper.Psi;
 
     [ContextAction(Name = "OrderDataMember", Group = "C#", Description = "Order DataMember Elements")]
     public class OrderDataMemberContextAction : ContextActionBase
@@ -71,14 +72,14 @@ namespace DataMemberOrderor
 
             var orderProperty = attribute.PropertyAssignments.FirstOrDefault(p => p.PropertyNameIdentifier.Name == "Order");
 
-            if (null != orderProperty) ModificationUtil.DeleteChild(orderProperty);
+            if (null != orderProperty) attribute.RemovePropertyAssignment(orderProperty);
 
             var replacement = factory.CreatePropertyAssignment(
                 "Order",
                 factory.CreateExpressionByConstantValue(
                     new ConstantValue(i, attribute.GetPsiModule(), attribute.GetResolveContext())));
 
-            attribute.AddPropertyAssignmentBefore(replacement, null);
+            attribute.AddPropertyAssignmentAfter(replacement, null);
 
             //var anchor = attribute.Children().FirstOrDefault(n => n.NodeType == CSharpTokenType.LPARENTH);
 
@@ -132,5 +133,14 @@ namespace DataMemberOrderor
         {
             return null != a.Reference && a.Name.QualifiedName == "DataMember";
         }
+    }
+
+    public static class CSharpElementFactoryExtensions
+    {
+        public static IPropertyAssignment CreatePropertyAssignment(this CSharpElementFactory factory, string name, ICSharpExpression arg)
+        {
+            return factory.CreateTypeMemberDeclaration("[A($0=$1)] class A {}", (object)name, (object)arg).Attributes[0].PropertyAssignments[0];
+        }
+
     }
 }
