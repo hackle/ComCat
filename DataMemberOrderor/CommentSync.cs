@@ -17,13 +17,11 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-
-using JetBrains.Annotations;
 using JetBrains.Application;
 using JetBrains.Application.Progress;
-using JetBrains.DocumentModel;
 using JetBrains.ProjectModel;
 using JetBrains.ReSharper.Feature.Services.Bulbs;
+using JetBrains.ReSharper.Feature.Services.CSharp.Bulbs;
 using JetBrains.ReSharper.Intentions.Extensibility;
 using JetBrains.ReSharper.Psi;
 using JetBrains.ReSharper.Psi.CSharp.Tree;
@@ -34,21 +32,18 @@ using JetBrains.Util;
 
 namespace JetBrains.ReSharper.SamplePlugin.ContextAction
 {
-    public abstract class SyncCommentActionBase : ContextActionBase
+    [ContextAction(Name = "Use base type comment", Group = "C#", Description = "Use comment from base type.", Priority = -20)]
+    public class SyncCommentActionBase : ContextActionBase
     {
-        protected readonly IContextActionDataProvider Provider;
+        protected readonly ICSharpContextActionDataProvider Provider;
 
         private const string UsedKeyWord = "base type comment";
-
-        protected const string Name = "Use base type comment";
-
-        protected const string Description = "Use comment from base type.";
-
+        
         private IExpression _selectedExpression;
 
         private IDocCommentNode _oldCommentNode;
 
-        protected SyncCommentActionBase(IContextActionDataProvider provider)
+        public SyncCommentActionBase(ICSharpContextActionDataProvider provider)
         {
             this.Provider = provider;
         }
@@ -69,8 +64,6 @@ namespace JetBrains.ReSharper.SamplePlugin.ContextAction
                 return null != this._oldCommentNode;
             }
         }
-
-        protected abstract bool IsConstantExpression([CanBeNull] IExpression expression);
 
         protected override Action<ITextControl> ExecutePsiTransaction(ISolution solution, IProgressIndicator progress)
         {
@@ -150,10 +143,6 @@ namespace JetBrains.ReSharper.SamplePlugin.ContextAction
 
             return classDeclaration.MethodDeclarations;
         }
-
-        protected abstract void OptimizeRefs(IRangeMarker marker, IFile file);
-
-        protected abstract IExpression CreateExpression();
     }
 
     public static class IMethodDeclarationMethod

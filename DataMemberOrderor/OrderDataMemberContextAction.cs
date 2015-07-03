@@ -1,7 +1,13 @@
 ﻿using System;
 using System.Linq;
+using System.Windows.Forms;
+
 using JetBrains.Application.Progress;
 using JetBrains.ProjectModel;
+using JetBrains.ReSharper.Feature.Services.Bulbs;
+using JetBrains.ReSharper.Feature.Services.CSharp.Bulbs;
+using JetBrains.ReSharper.Intentions.Extensibility;
+using JetBrains.ReSharper.Psi;
 using JetBrains.ReSharper.Psi.CSharp;
 using JetBrains.ReSharper.Psi.CSharp.Tree;
 using JetBrains.ReSharper.Psi.ExtensionsAPI.Tree;
@@ -11,46 +17,49 @@ using JetBrains.Util;
 
 namespace DataMemberOrderor
 {
-    using System.Windows.Forms;
-
-    using global::JetBrains.ReSharper.Feature.Services.Bulbs;
-    using global::JetBrains.ReSharper.Feature.Services.CSharp.Bulbs;
-    using global::JetBrains.ReSharper.Intentions.Extensibility;
-    using global::JetBrains.ReSharper.Psi;
-
     [ContextAction(Name = "OrderDataMember", Group = "C#", Description = "Order DataMember Elements")]
     public class OrderDataMemberContextAction : ContextActionBase
     {
-        private ICSharpContextActionDataProvider _actionDataProvider;
+        private readonly ICSharpContextActionDataProvider _actionDataProvider;
+
         private IClassDeclaration _class;
 
         public OrderDataMemberContextAction(ICSharpContextActionDataProvider actionDataProvider)
         {
-            _actionDataProvider = actionDataProvider;
+            this._actionDataProvider = actionDataProvider;
         }
 
         protected override Action<ITextControl> ExecutePsiTransaction(ISolution solution, IProgressIndicator progress)
         {
-            if (null == _class) return null;
-
-            var properties = _class.PropertyDeclarations.Where(HasDataMember).ToArray();
-
-            if (!properties.Any()) return null;
-
-            var reordered = ReorderNodes(properties);
-
-            if (null == reordered) return null;
-
-            var anchor = properties[0];
-
-            for (var i = properties.Length - 1; i >= 0; i--)
+            if (null == this._class)
             {
-                SetOrder(reordered[i], i);
+                return null;
+            }
+
+            IPropertyDeclaration[] properties = this._class.PropertyDeclarations.Where(this.HasDataMember).ToArray();
+
+            if (!properties.Any())
+            {
+                return null;
+            }
+
+            IPropertyDeclaration[] reordered = ReorderNodes(properties);
+
+            if (null == reordered)
+            {
+                return null;
+            }
+
+            IPropertyDeclaration anchor = properties[0];
+
+            for (int i = properties.Length - 1; i >= 0; i--)
+            {
+                this.SetOrder(reordered[i], i);
                 ModificationUtil.AddChildAfter(anchor, reordered[i]);
             }
 
             //remove old nodes
-            foreach (var node in properties)
+            foreach (IPropertyDeclaration node in properties)
             {
                 ModificationUtil.DeleteChild(node);
             }
@@ -66,17 +75,24 @@ namespace DataMemberOrderor
 
         private void SetOrder(IPropertyDeclaration propertyDeclaration, int i)
         {
-            var factory = CSharpElementFactory.GetInstance(this._actionDataProvider.PsiModule);
+            CSharpElementFactory factory = CSharpElementFactory.GetInstance(this._actionDataProvider.PsiModule);
 
-            var attribute = propertyDeclaration.Attributes.SingleOrDefault(IsDataMemberAttribute);
+            IAttribute attribute = propertyDeclaration.Attributes.SingleOrDefault(IsDataMemberAttribute);
 
-            if (null == attribute) return;
+            if (null == attribute)
+            {
+                return;
+            }
 
-            var orderProperty = attribute.PropertyAssignments.FirstOrDefault(p => p.PropertyNameIdentifier.Name == "Order");
+            IPropertyAssignment orderProperty =
+                attribute.PropertyAssignments.FirstOrDefault(p => p.PropertyNameIdentifier.Name == "Order");
 
-            if (null != orderProperty) attribute.RemovePropertyAssignment(orderProperty);
+            if (null != orderProperty)
+            {
+                attribute.RemovePropertyAssignment(orderProperty);
+            }
 
-            var replacement = factory.CreatePropertyAssignment(
+            IPropertyAssignment replacement = factory.CreatePropertyAssignment(
                 "Order",
                 factory.CreateExpressionByConstantValue(
                     new ConstantValue(i, attribute.GetPsiModule(), attribute.GetResolveContext())));
@@ -102,28 +118,37 @@ namespace DataMemberOrderor
 
         public override string Text
         {
-            get { return "Reorder DataMember in this class"; }
+            get
+            {
+                return "Reorder DataMember in this class";
+            }
         }
 
         public override bool IsAvailable(IUserDataHolder cache)
         {
             //reset
-            _class = null;
+            this._class = null;
 
-            var element = _actionDataProvider.SelectedElement;
+            ITreeNode element = this._actionDataProvider.SelectedElement;
 
-            if (null == element) return false;
+            if (null == element)
+            {
+                return false;
+            }
 
-            _class = element.Parent as IClassDeclaration;
+            this._class = element.Parent as IClassDeclaration;
 
-            if (null == _class) return false;
+            if (null == this._class)
+            {
+                return false;
+            }
 
-            return HasDataMembers(_class);
+            return this.HasDataMembers(this._class);
         }
 
         private bool HasDataMembers(IClassDeclaration classDeclaration)
         {
-            return classDeclaration.PropertyDeclarations.Any(HasDataMember);
+            return classDeclaration.PropertyDeclarations.Any(this.HasDataMember);
         }
 
         private bool HasDataMember(IPropertyDeclaration propertyDeclaration)
@@ -139,10 +164,14 @@ namespace DataMemberOrderor
 
     public static class CSharpElementFactoryExtensions
     {
-        public static IPropertyAssignment CreatePropertyAssignment(this CSharpElementFactory factory, string name, ICSharpExpression arg)
+        public static IPropertyAssignment CreatePropertyAssignment(
+            this CSharpElementFactory factory,
+            string name,
+            ICSharpExpression arg)
         {
-            return factory.CreateTypeMemberDeclaration("[A($0=$1)] class A {}", (object)name, (object)arg).Attributes[0].PropertyAssignments[0];
+            return
+                factory.CreateTypeMemberDeclaration("[A($0=$1)] class A {}", (object)name, (object)arg).Attributes[0]
+                    .PropertyAssignments[0];
         }
-
     }
 }
