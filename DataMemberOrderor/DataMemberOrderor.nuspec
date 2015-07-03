@@ -2,13 +2,13 @@
 <package >
   <metadata>
     <id>ComCat</id>
-    <version>1.0.0.6</version>
+    <version>1.0.0.7</version>
     <title>ComCat</title>
     <authors>hacklew@hotmail.com</authors>
     <owners>Hackle Wayne</owners>
     <projectUrl>https://github.com/hackle/ComCat.git</projectUrl>
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
-    <description>ComCat - a wild one</description>
+    <description>ComCat does 2 things: order DataMember properties in a DataContract; sync comments from interface to implementation.</description>
     <releaseNotes>Initial beta.</releaseNotes>
     <copyright>Copyright 2015</copyright>
     <tags>Resharper DataContract DataMember Order Reorder</tags>
