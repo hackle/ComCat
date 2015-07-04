@@ -95,11 +95,11 @@ namespace DataMemberOrderor
 
         private bool NodeIsProperty(ITreeNode currentNode)
         {
-            return currentNode.Parent is IPropertyDeclaration;
+            return currentNode is IIdentifier && currentNode.Parent is IPropertyDeclaration;
         }
         private bool NodeIsMethod(ITreeNode currentNode)
         {
-            return currentNode.Parent is IMethodDeclaration;
+            return currentNode is IIdentifier && currentNode.Parent is IMethodDeclaration;
         }
 
         private bool NodeIsImplementingClass(ITreeNode currentNode)
@@ -110,7 +110,7 @@ namespace DataMemberOrderor
 
         private bool NodeIsClass(ITreeNode currentNode)
         {
-            return currentNode.Parent is IClassDeclaration;
+            return currentNode is IIdentifier && currentNode.Parent is IClassDeclaration;
         }
 
         private bool ClassHasInheritance(IClassDeclaration classDeclaration)
