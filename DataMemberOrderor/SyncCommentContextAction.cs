@@ -98,11 +98,12 @@ namespace DataMemberOrderor
         {
             var superTypes = new List<IClassLikeDeclaration>();
 
-            superTypes.AddRange(classDeclaration.SuperTypes.SelectMany(t => t.GetTypeElement().GetDeclarations().Select(d => d as IClassLikeDeclaration)));
+            var classLikeDeclarations = classDeclaration.SuperTypes.SelectMany(t => t.GetTypeElement().GetDeclarations().Select(d => d as IClassLikeDeclaration)).ToArray();
+            superTypes.AddRange(classLikeDeclarations);
 
-            if (superTypes.Any())
+            if (classLikeDeclarations.Any())
             {
-                var extraSuperTypes = superTypes.SelectMany(GetSupertypesRecursive);
+                var extraSuperTypes = superTypes.SelectMany(GetSupertypesRecursive).ToArray();
                 superTypes.AddRange(extraSuperTypes);
             }
 
