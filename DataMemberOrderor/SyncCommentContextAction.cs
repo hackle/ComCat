@@ -212,12 +212,12 @@ namespace DataMemberOrderor
             var commentNode = currentNode as IDocCommentNode;
             if (null == commentNode) return false;
 
-            return IsMethodDocComment(commentNode);
+            return IsMethodOrPropertyDocComment(commentNode);
         }
 
-        private static bool IsMethodDocComment(ITreeNode commentNode)
+        private static bool IsMethodOrPropertyDocComment(ITreeNode commentNode)
         {
-            return commentNode.Parent is IDocCommentBlockNode && commentNode.Parent.Parent is IMethodDeclaration;
+            return commentNode.Parent is IDocCommentBlockNode && (commentNode.Parent.Parent is IMethodDeclaration || commentNode.Parent.Parent is IPropertyDeclaration);
         }
 
         protected override Action<ITextControl> ExecutePsiTransaction(ISolution solution, IProgressIndicator progress)
