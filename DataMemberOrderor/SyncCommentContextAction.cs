@@ -52,7 +52,8 @@ namespace DataMemberOrderor
 
         private bool NodeIsImplementingClass()
         {
-            return NodeIsClass() && ClassHasInheritingMethods(GetParentClass(this._currentNode));
+            return NodeIsClass() &&
+                   ClassHasInheritance(GetParentClass(this._currentNode));
         }
 
         private bool NodeIsClass()
@@ -62,30 +63,55 @@ namespace DataMemberOrderor
             return null != classDeclaration;
         }
 
-        private bool ClassHasInheritingMethods(IClassDeclaration classDeclaration)
+        private bool ClassHasInheritance(IClassDeclaration classDeclaration)
         {
-            return GetMethodInheritance(classDeclaration).Any();
+            var superTypes = GetSupertypesRecursive(classDeclaration);
+
+            return GetMethodInheritance(classDeclaration, superTypes).Any() ||
+                   GetPropertyInheritance(classDeclaration, superTypes).Any();
         }
 
-        private IEnumerable<MethodInheritance> GetMethodInheritance(IClassDeclaration classDeclaration)
+        private IEnumerable<TreeNodeInheritance> GetPropertyInheritance(IClassDeclaration classDeclaration, IEnumerable<IClassLikeDeclaration> superTypes)
+        {
+            var childProperties =
+                classDeclaration.PropertyDeclarations.Where(IsPublicOrProtectedMethod).ToArray();
+
+            if (!childProperties.Any()) return new TreeNodeInheritance[0];
+
+            var baseProperties = superTypes.SelectMany(GetTypeProperties);
+
+            return from baseProperty in baseProperties
+                join childProperty in childProperties
+                    on baseProperty.DeclaredElement.ToString() equals childProperty.DeclaredElement.ToString()
+                select new TreeNodeInheritance()
+                {
+                    BaseTreeNode = baseProperty,
+                    ChildTreeNode = childProperty
+                };
+        }
+        private IEnumerable<TreeNodeInheritance> GetMethodInheritance(IClassDeclaration classDeclaration, IEnumerable<IClassLikeDeclaration> superTypes)
         {
             var publicMethods =
                 classDeclaration.MethodDeclarations.Where(IsPublicOrProtectedMethod).ToArray();
 
-            if (!publicMethods.Any()) return new MethodInheritance[0];
-
-            var superTypes = GetSupertypesRecursive(classDeclaration);
-
+            if (!publicMethods.Any()) return new TreeNodeInheritance[0];
+            
             var baseMethods = superTypes.SelectMany(GetTypeMethods);
 
             return from baseMethod in baseMethods
                 join localMethod in publicMethods
                     on baseMethod.DeclaredElement.ToString() equals localMethod.DeclaredElement.ToString()
-                select new MethodInheritance()
+                select new TreeNodeInheritance()
                 {
-                    BaseMethod = baseMethod,
-                    ChildMethod = localMethod
+                    BaseTreeNode = baseMethod,
+                    ChildTreeNode = localMethod
                 };
+        }
+
+        private bool IsPublicOrProtectedMethod(IPropertyDeclaration propertyDeclaration)
+        {
+            return propertyDeclaration.ModifiersList.HasModifier(CSharpTokenType.PUBLIC_KEYWORD) ||
+                   propertyDeclaration.ModifiersList.HasModifier(CSharpTokenType.PROTECTED_KEYWORD);
         }
 
         private bool IsPublicOrProtectedMethod(IMethodDeclaration methodDeclaration)
@@ -108,6 +134,14 @@ namespace DataMemberOrderor
             }
 
             return superTypes;
+        }
+
+        private IEnumerable<IPropertyDeclaration> GetTypeProperties(IClassLikeDeclaration superType)
+        {
+            if (superType is IInterfaceDeclaration)
+                return this.GetProperties(superType as IInterfaceDeclaration);
+
+            return this.GetProperties(superType as IClassDeclaration);
         }
 
         private IEnumerable<IMethodDeclaration> GetTypeMethods(IClassLikeDeclaration superType)
@@ -157,18 +191,21 @@ namespace DataMemberOrderor
             }
             else
             {
-                var methodInheritances = GetMethodInheritance(GetParentClass(this._currentNode));
+                var classDeclaration = GetParentClass(this._currentNode);
+                var superTypes = GetSupertypesRecursive(classDeclaration);
 
-                foreach (var methodPair in methodInheritances)
+                var inheritances = GetMethodInheritance(classDeclaration, superTypes).Concat(GetPropertyInheritance(classDeclaration, superTypes));
+
+                foreach (var methodPair in inheritances)
                 {
-                    ReplaceOrInsertComments(methodPair.BaseMethod, methodPair.ChildMethod);
+                    ReplaceOrInsertComments(methodPair.BaseTreeNode, methodPair.ChildTreeNode);
                 }
             }
 
             return null;
         }
 
-        private void ReplaceOrInsertComments(IMethodDeclaration baseMethod, IMethodDeclaration childMethod)
+        private void ReplaceOrInsertComments(ITreeNode baseMethod, ITreeNode childMethod)
         {
             var baseComments = GetMethodComments(baseMethod);
 
@@ -188,12 +225,12 @@ namespace DataMemberOrderor
             }
         }
 
-        private void InsertComments(IMethodDeclaration method, IDocCommentBlockNode comments)
+        private void InsertComments(ITreeNode method, IDocCommentBlockNode comments)
         {
             ModificationUtil.AddChildBefore(method.FirstChild, comments);
         }
 
-        private IDocCommentBlockNode GetMethodComments(IMethodDeclaration baseMethod)
+        private IDocCommentBlockNode GetMethodComments(ITreeNode baseMethod)
         {
             return baseMethod.Children().SingleOrDefault(n => n is IDocCommentBlockNode) as IDocCommentBlockNode;
         }
@@ -242,6 +279,15 @@ namespace DataMemberOrderor
             return declaration1.DeclaredElement.ToString() == declaration2.DeclaredElement.ToString();
         }
 
+        private IEnumerable<IPropertyDeclaration> GetProperties(IInterfaceDeclaration interfaceDeclaration)
+        {
+            if (null == interfaceDeclaration)
+            {
+                return new IPropertyDeclaration[0];
+            }
+
+            return interfaceDeclaration.PropertyDeclarations;
+        }
         private IEnumerable<IMethodDeclaration> GetMethods(IInterfaceDeclaration interfaceDeclaration)
         {
             if (null == interfaceDeclaration)
@@ -250,6 +296,16 @@ namespace DataMemberOrderor
             }
 
             return interfaceDeclaration.MethodDeclarations;
+        }
+
+        private IEnumerable<IPropertyDeclaration> GetProperties(IClassDeclaration classDeclaration)
+        {
+            if (null == classDeclaration)
+            {
+                return new IPropertyDeclaration[0];
+            }
+
+            return classDeclaration.PropertyDeclarations.Where(IsVirtualOrAbstractMethod);
         }
 
         private IEnumerable<IMethodDeclaration> GetMethods(IClassDeclaration classDeclaration)
@@ -262,6 +318,11 @@ namespace DataMemberOrderor
             return classDeclaration.MethodDeclarations.Where(IsVirtualOrAbstractMethod);
         }
 
+        private bool IsVirtualOrAbstractMethod(IPropertyDeclaration prpertyDeclaration)
+        {
+            return prpertyDeclaration.ModifiersList.HasModifier(CSharpTokenType.VIRTUAL_KEYWORD) ||
+                   prpertyDeclaration.ModifiersList.HasModifier(CSharpTokenType.ABSTRACT_KEYWORD);
+        }
         private bool IsVirtualOrAbstractMethod(IMethodDeclaration methodDeclaration)
         {
             return methodDeclaration.ModifiersList.HasModifier(CSharpTokenType.VIRTUAL_KEYWORD) ||
@@ -269,9 +330,9 @@ namespace DataMemberOrderor
         }
     }
 
-    class MethodInheritance
+    class TreeNodeInheritance
     {
-        public IMethodDeclaration BaseMethod { get; set; }
-        public IMethodDeclaration ChildMethod { get; set; }
+        public ITreeNode BaseTreeNode { get; set; }
+        public ITreeNode ChildTreeNode { get; set; }
     }
 }
