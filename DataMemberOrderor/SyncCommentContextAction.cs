@@ -102,7 +102,8 @@ namespace DataMemberOrderor
 
             if (superTypes.Any())
             {
-                superTypes.AddRange(superTypes.SelectMany(GetSupertypesRecursive));
+                var extraSuperTypes = superTypes.SelectMany(GetSupertypesRecursive);
+                superTypes.AddRange(extraSuperTypes);
             }
 
             return superTypes;
