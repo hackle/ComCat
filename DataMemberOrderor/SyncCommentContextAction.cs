@@ -70,7 +70,7 @@ namespace DataMemberOrderor
         private IEnumerable<MethodInheritance> GetMethodInheritance(IClassDeclaration classDeclaration)
         {
             var publicMethods =
-                classDeclaration.MethodDeclarations.Where(IsVirtualOrAbstractMethod).ToArray();
+                classDeclaration.MethodDeclarations.Where(IsPublicOrProtectedMethod).ToArray();
 
             if (!publicMethods.Any()) return new MethodInheritance[0];
 
@@ -86,6 +86,12 @@ namespace DataMemberOrderor
                     BaseMethod = baseMethod,
                     ChildMethod = localMethod
                 };
+        }
+
+        private bool IsPublicOrProtectedMethod(IMethodDeclaration methodDeclaration)
+        {
+            return methodDeclaration.ModifiersList.HasModifier(CSharpTokenType.PUBLIC_KEYWORD) ||
+                   methodDeclaration.ModifiersList.HasModifier(CSharpTokenType.PROTECTED_KEYWORD);
         }
 
         private IEnumerable<IClassLikeDeclaration> GetSupertypesRecursive(IClassLikeDeclaration classDeclaration)
