@@ -1,19 +1,3 @@
-﻿/*
- * Copyright 2007-2011 JetBrains s.r.o.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- * http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -30,7 +14,7 @@ using JetBrains.ReSharper.Psi.Tree;
 using JetBrains.TextControl;
 using JetBrains.Util;
 
-namespace JetBrains.ReSharper.SamplePlugin.ContextAction
+namespace DataMemberOrderor
 {
     [ContextAction(Name = "Use base type comment", Group = "C#", Description = "Use comment from base type.", Priority = -20)]
     public class SyncCommentActionBase : ContextActionBase
@@ -142,15 +126,6 @@ namespace JetBrains.ReSharper.SamplePlugin.ContextAction
             }
 
             return classDeclaration.MethodDeclarations;
-        }
-    }
-
-    public static class IMethodDeclarationMethod
-    {
-        public static bool IsPublic(this IMethodDeclaration declaration)
-        {
-            return null != declaration.ModifiersList
-                   && declaration.ModifiersList.Modifiers.Any(m => m.GetText().ToLower() == "public");
         }
     }
 }
