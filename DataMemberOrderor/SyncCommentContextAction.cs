@@ -46,21 +46,71 @@ namespace DataMemberOrderor
             {
                 this._currentNode = Provider.SelectedElement;
 
-                return NodeIsMethodComment(this._currentNode) || NodeIsImplementingClass();
+                var isOnMethodOrProperty = NodeIsDocComment(this._currentNode) || NodeIsMethod(this._currentNode) || NodeIsProperty(this._currentNode);
+                var methodOrPropertyIsInheriting = NodeIsImplementingMethod(this._currentNode) || NodeIsImplementingProperty(this._currentNode);
+
+                return (isOnMethodOrProperty && methodOrPropertyIsInheriting) || NodeIsImplementingClass(this._currentNode);
             }
         }
 
-        private bool NodeIsImplementingClass()
+        private bool NodeIsImplementingProperty(ITreeNode currentNode)
         {
-            return NodeIsClass() &&
-                   ClassHasInheritance(GetParentClass(this._currentNode));
+            var ancestor = currentNode.GetAncestor<IPropertyDeclaration>();
+            if (null == ancestor) return false;
+            
+            return PropertyHasInheritance(ancestor);
         }
 
-        private bool NodeIsClass()
+        private bool NodeIsImplementingMethod(ITreeNode currentNode)
         {
-            var classDeclaration = GetParentClass(this._currentNode);
+            var methodDeclaration = currentNode.GetAncestor<IMethodDeclaration>();
+            if (null == methodDeclaration) return false;
+            
+            return MethodHasInheritance(methodDeclaration);
+        }
 
-            return null != classDeclaration;
+        private bool PropertyHasInheritance(IPropertyDeclaration propertyDeclaration)
+        {
+            var classDeclaration = propertyDeclaration.GetAncestor<IClassDeclaration>();
+            if (null == classDeclaration) return false;
+
+            var superTypes = GetSupertypesRecursive(classDeclaration);
+
+            var inheritances = GetPropertyInheritance(classDeclaration, superTypes);
+
+            return inheritances.Any(i => PropertiesAreEqual(i.BaseTreeNode as IPropertyDeclaration, propertyDeclaration));
+        }
+
+        private bool MethodHasInheritance(IMethodDeclaration methodDeclaration)
+        {
+            var classDeclaration = methodDeclaration.GetAncestor<IClassDeclaration>();
+            if (null == classDeclaration) return false;
+
+            var superTypes = GetSupertypesRecursive(classDeclaration);
+
+            var inheritances = GetMethodInheritance(classDeclaration, superTypes);
+
+            return inheritances.Any(i => MethodsAreEqual(i.BaseTreeNode as IMethodDeclaration, methodDeclaration));
+        }
+
+        private bool NodeIsProperty(ITreeNode currentNode)
+        {
+            return currentNode.Parent is IPropertyDeclaration;
+        }
+        private bool NodeIsMethod(ITreeNode currentNode)
+        {
+            return currentNode.Parent is IMethodDeclaration;
+        }
+
+        private bool NodeIsImplementingClass(ITreeNode currentNode)
+        {
+            return NodeIsClass(currentNode) &&
+                   ClassHasInheritance(GetParentClass(currentNode));
+        }
+
+        private bool NodeIsClass(ITreeNode currentNode)
+        {
+            return currentNode.Parent is IClassDeclaration;
         }
 
         private bool ClassHasInheritance(IClassDeclaration classDeclaration)
@@ -154,10 +204,10 @@ namespace DataMemberOrderor
 
         private IClassDeclaration GetParentClass(ITreeNode treeNode)
         {
-            return treeNode.Parent as IClassDeclaration;
+            return treeNode.GetAncestor<IClassDeclaration>() as IClassDeclaration;
         }
 
-        private bool NodeIsMethodComment(ITreeNode currentNode)
+        private bool NodeIsDocComment(ITreeNode currentNode)
         {
             var commentNode = currentNode as IDocCommentNode;
             if (null == commentNode) return false;
@@ -177,32 +227,51 @@ namespace DataMemberOrderor
                 return null;
             }
 
-            if (NodeIsMethodComment(this._currentNode))
+            ITreeNode targetNode = null;
+            if (NodeIsDocComment(this._currentNode) && ParentIsPropertyOrMethod(this._currentNode))
             {
-                ITreeNode currentNode = this._currentNode.Parent as IDocCommentBlockNode;
-
-                var methodDeclaration = currentNode.Parent as IMethodDeclaration;
-                if (null == methodDeclaration)
-                {
-                    return null;
-                }
-
-                this.TryUseBaseTypeComments(methodDeclaration);
+                targetNode = this._currentNode.Parent;
             }
-            else
-            {
-                var classDeclaration = GetParentClass(this._currentNode);
-                var superTypes = GetSupertypesRecursive(classDeclaration);
 
-                var inheritances = GetMethodInheritance(classDeclaration, superTypes).Concat(GetPropertyInheritance(classDeclaration, superTypes));
-
-                foreach (var methodPair in inheritances)
-                {
-                    ReplaceOrInsertComments(methodPair.BaseTreeNode, methodPair.ChildTreeNode);
-                }
-            }
+            SyncComments(targetNode);
 
             return null;
+        }
+
+        private bool ParentIsPropertyOrMethod(ITreeNode node)
+        {
+            return node.Parent is IMethodDeclaration ||
+                   node.Parent is IPropertyDeclaration;
+        }
+
+        private void SyncComments(ITreeNode targetNode)
+        {
+            var classDeclaration = GetParentClass(this._currentNode);
+            var superTypes = GetSupertypesRecursive(classDeclaration);
+
+            var inheritances =
+                GetMethodInheritance(classDeclaration, superTypes).Concat(GetPropertyInheritance(classDeclaration, superTypes));
+
+            if (null != targetNode)
+            {
+                inheritances = inheritances.Where(i => NodesAreEqual(i.ChildTreeNode, targetNode));
+            }
+            
+            foreach (var methodPair in inheritances)
+            {
+                ReplaceOrInsertComments(methodPair.BaseTreeNode, methodPair.ChildTreeNode);
+            }
+        }
+
+        private bool NodesAreEqual(ITreeNode childTreeNode, ITreeNode targetNode)
+        {
+            if (targetNode is IPropertyDeclaration && childTreeNode is IPropertyDeclaration)
+                return PropertiesAreEqual(targetNode as IPropertyDeclaration, childTreeNode as IPropertyDeclaration);
+
+            if (targetNode is IMethodDeclaration && childTreeNode is IMethodDeclaration)
+                return MethodsAreEqual(targetNode as IMethodDeclaration, childTreeNode as IMethodDeclaration);
+
+            return false;
         }
 
         private void ReplaceOrInsertComments(ITreeNode baseMethod, ITreeNode childMethod)
@@ -279,6 +348,11 @@ namespace DataMemberOrderor
             return declaration1.DeclaredElement.ToString() == declaration2.DeclaredElement.ToString();
         }
 
+        bool PropertiesAreEqual(IPropertyDeclaration declaration1, IPropertyDeclaration declaration2)
+        {
+            return declaration1.DeclaredElement.ToString() == declaration2.DeclaredElement.ToString();
+        }
+
         private IEnumerable<IPropertyDeclaration> GetProperties(IInterfaceDeclaration interfaceDeclaration)
         {
             if (null == interfaceDeclaration)
@@ -334,5 +408,22 @@ namespace DataMemberOrderor
     {
         public ITreeNode BaseTreeNode { get; set; }
         public ITreeNode ChildTreeNode { get; set; }
+    }
+
+    static class ITreeNodeExtensions
+    {
+        public static T GetAncestor<T>(this ITreeNode node) where T : class, ITreeNode
+        {
+            var parent = node.Parent;
+
+            while (null != parent)
+            {
+                if (parent is T) return parent as T;
+
+                parent = parent.Parent;
+            }
+
+            return null;
+        }
     }
 }
