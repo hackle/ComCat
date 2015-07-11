@@ -8,9 +8,10 @@
     <owners>Hackle Wayne</owners>
     <projectUrl>https://github.com/hackle/ComCat.git</projectUrl>
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
-    <description>ComCat does 2 things: order DataMember properties in a DataContract; sync comments from interface / base class to implementation / child class. You will need to use the ReSharper extension manager to point to the nuget repository (however this plugin is also available on Nuget Gallery) first in order to install this plugin. It possibly won't work with the Nuget package manager. Go to the project page for more info.</description>
+    <description>ComCat does 2 things: order DataMember properties in a DataContract; sync comments from interface / base class to implementation / child class. </description>
     <releaseNotes>Initial beta.</releaseNotes>
     <copyright>Copyright 2015</copyright>
+    <summary>You will need to use the ReSharper extension manager to point to the nuget repository (however this plugin is also available on Nuget Gallery) first in order to install this plugin. It possibly won't work with the Nuget package manager. Go to the project page for more info.</summary>
     <tags>Resharper DataContract DataMember Order Reorder Comments Sync copy synchronize</tags>
     <dependencies>
       <dependency id="ReSharper" version="8.2.1" />
