@@ -131,7 +131,7 @@ namespace DataMemberOrderor
 
             return from baseProperty in baseProperties
                 join childProperty in childProperties
-                    on baseProperty.DeclaredElement.ToString() equals childProperty.DeclaredElement.ToString()
+                    on baseProperty.DeclaredName equals childProperty.DeclaredName
                 select new TreeNodeInheritance
                 {
                     BaseTreeNode = baseProperty,
@@ -161,14 +161,16 @@ namespace DataMemberOrderor
 
         private bool IsPublicOrProtectedMethod(IPropertyDeclaration propertyDeclaration)
         {
-            return propertyDeclaration.ModifiersList.HasModifier(CSharpTokenType.PUBLIC_KEYWORD) ||
-                   propertyDeclaration.ModifiersList.HasModifier(CSharpTokenType.PROTECTED_KEYWORD);
+            return null != propertyDeclaration.ModifiersList && (
+                propertyDeclaration.ModifiersList.HasModifier(CSharpTokenType.PUBLIC_KEYWORD) ||
+                   propertyDeclaration.ModifiersList.HasModifier(CSharpTokenType.PROTECTED_KEYWORD));
         }
 
         private bool IsPublicOrProtectedMethod(IMethodDeclaration methodDeclaration)
         {
-            return methodDeclaration.ModifiersList.HasModifier(CSharpTokenType.PUBLIC_KEYWORD) ||
-                   methodDeclaration.ModifiersList.HasModifier(CSharpTokenType.PROTECTED_KEYWORD);
+            return null != methodDeclaration.ModifiersList && (
+                methodDeclaration.ModifiersList.HasModifier(CSharpTokenType.PUBLIC_KEYWORD) ||
+                methodDeclaration.ModifiersList.HasModifier(CSharpTokenType.PROTECTED_KEYWORD));
         }
 
         private IEnumerable<IClassLikeDeclaration> GetSupertypesRecursive(IClassLikeDeclaration classDeclaration)
@@ -286,23 +288,23 @@ namespace DataMemberOrderor
             return false;
         }
 
-        private void ReplaceOrInsertComments(ITreeNode newMethod, ITreeNode oldMethod)
+        private void ReplaceOrInsertComments(ITreeNode newNode, ITreeNode oldNode)
         {
-            IDocCommentBlockNode newComments = GetMethodComments(newMethod);
+            IDocCommentBlockNode newComments = GetNodeComments(newNode);
 
             if (null == newComments) return;
 
-            IDocCommentBlockNode oldComments = GetMethodComments(oldMethod);
+            IDocCommentBlockNode replacement = newComments.Copy();
+
+            IDocCommentBlockNode oldComments = GetNodeComments(oldNode);
 
             if (null == oldComments)
             {
-                InsertComments(oldMethod, newComments);
+                InsertComments(oldNode, replacement);
             }
             else
             {
-                IDocCommentBlockNode replacement = newComments.Copy();
-
-                ModificationUtil.ReplaceChild(oldComments, newComments);
+                ModificationUtil.ReplaceChild(oldComments, replacement);
             }
         }
 
@@ -311,7 +313,7 @@ namespace DataMemberOrderor
             ModificationUtil.AddChildBefore(method.FirstChild, comments);
         }
 
-        private IDocCommentBlockNode GetMethodComments(ITreeNode baseMethod)
+        private IDocCommentBlockNode GetNodeComments(ITreeNode baseMethod)
         {
             return baseMethod.Children().SingleOrDefault(n => n is IDocCommentBlockNode) as IDocCommentBlockNode;
         }
