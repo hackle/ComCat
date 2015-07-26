@@ -19,10 +19,24 @@ namespace DataMemberOrderor
     public class SyncCommentContextActionBase : ContextActionBase
     {
         private readonly string _contextMenuKeyWord;
+
         public SyncDirection Direction = SyncDirection.FromBaseTypes;
+
         protected readonly ICSharpContextActionDataProvider Provider;
 
         private ITreeNode _currentNode;
+
+        private bool MethodOrPropertyIsInheriting(ITreeNode node)
+        {
+                return NodeIsImplementingMethod(node) ||
+                       NodeIsImplementingProperty(node);
+        }
+
+        private bool IsOnMethodOrProperty(ITreeNode node)
+        {
+            return NodeIsDocComment(node) || NodeIsMethod(node) ||
+                   NodeIsProperty(node);
+        }
 
         public SyncCommentContextActionBase(ICSharpContextActionDataProvider provider, string contextMenuKeyWord)
         {
@@ -40,14 +54,14 @@ namespace DataMemberOrderor
             using (ReadLockCookie.Create())
             {
                 _currentNode = Provider.SelectedElement;
-
-                bool isOnMethodOrProperty = NodeIsDocComment(_currentNode) || NodeIsMethod(_currentNode) ||
-                                            NodeIsProperty(_currentNode);
-                bool methodOrPropertyIsInheriting = NodeIsImplementingMethod(_currentNode) ||
-                                                    NodeIsImplementingProperty(_currentNode);
-
-                return (isOnMethodOrProperty && methodOrPropertyIsInheriting) || NodeIsImplementingClass(_currentNode);
+                
+                return NodeIsImplementingMethodOrProperty(_currentNode) || NodeIsImplementingClass(_currentNode);
             }
+        }
+
+        private bool NodeIsImplementingMethodOrProperty(ITreeNode node)
+        {
+            return (IsOnMethodOrProperty(node) && MethodOrPropertyIsInheriting(node));
         }
 
         private bool NodeIsImplementingProperty(ITreeNode currentNode)
@@ -262,6 +276,12 @@ namespace DataMemberOrderor
             if (null != targetNode)
             {
                 inheritances = inheritances.Where(i => NodesAreEqual(i.ChildTreeNode, targetNode));
+            }
+
+            //if it's only for one node
+            if (IsOnMethodOrProperty(this._currentNode))
+            {
+                inheritances = inheritances.Where(i => i.ChildTreeNode == this._currentNode.Parent);
             }
 
             foreach (TreeNodeInheritance methodPair in inheritances)
